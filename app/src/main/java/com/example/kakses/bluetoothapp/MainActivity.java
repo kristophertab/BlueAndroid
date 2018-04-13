@@ -11,14 +11,19 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.util.Xml;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.w3c.dom.Text;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,9 +31,12 @@ import java.util.Set;
 import static android.support.v4.app.ActivityCompat.startActivityForResult;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "FragmentActivity";
     public BluetoothAdapter mBluetoothAdapter;
     private static final int REQUEST_ENABLE_BT = 1; //must be greater than 0
     private Intent BtServiceIntent;
+    private MyBluetoothService mBluetoothService;
+    private EditText editText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +50,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 TextView textView = (TextView) findViewById(R.id.textOutput);
                 String devicesList = "";
-                if(MyBluetoothService.blueDevices != null){
-                    for(BluetoothDevice device : MyBluetoothService.blueDevices){
+                Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+
+                if(pairedDevices != null){
+                    for(BluetoothDevice device : pairedDevices){
                         devicesList += device.getName();
                         devicesList += ", ";
                     }
@@ -51,6 +61,24 @@ public class MainActivity extends AppCompatActivity {
                 } else{
                     textView.setText("Device list not initialied");
                 }
+            }
+        });
+
+        Button connectButton = (Button) findViewById(R.id.connectButton);
+        connectButton.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mBluetoothService.start_client();
+            }
+        });
+
+        Button sentButton = (Button) findViewById(R.id.sendButton);
+        editText = (EditText) findViewById(R.id.textInput);
+        sentButton.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                byte[] message = editText.getText().toString().getBytes(Charset.defaultCharset());
+                mBluetoothService.write(message);
             }
         });
 
@@ -65,13 +93,16 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
-        BtServiceIntent = new Intent(this, MyBluetoothService.class);
-        startService(BtServiceIntent);
+/*        BtServiceIntent = new Intent(this, MyBluetoothService.class);
+        startService(BtServiceIntent);*/
+
+        mBluetoothService = new MyBluetoothService();
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        // Inflate the menu; this adds items to the a        Log.d(TAG, "connected, Socket Type:" + socketType);ction bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
@@ -92,9 +123,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        //TODO: bluetooth service start();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        stopService(BtServiceIntent);
+        mBluetoothService.stop();
     }
 }

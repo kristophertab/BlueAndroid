@@ -5,4 +5,5 @@
     <string name="app_btnLeft">don\'t know yet</string>
     <string name="app_textInput">Put your text here</string>
     <string name="app_txtOutput">Welcome in bluetotth app</string>
+    <string name="app_btnConnect">Connect</string>
 </resources>
