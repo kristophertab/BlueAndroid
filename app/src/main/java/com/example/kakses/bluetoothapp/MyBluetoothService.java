@@ -38,8 +38,6 @@ import static android.support.v4.app.ActivityCompat.startActivityForResult;
 
 
 public class MyBluetoothService {
-    public static List<BluetoothDevice> blueDevices;
-
     private static final String TAG = "MY_APP_DEBUG_TAG";
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private Context appContext;
@@ -76,35 +74,19 @@ public class MyBluetoothService {
      */
     public MyBluetoothService(Context context, Handler handler){
         super();
-        mHandler = handler;
-        appContext = context;
         mState = STATE_NONE;
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        /*/ Register for broadcasts when a device is discovered.
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter);// TODO: Ble searching devices to another activity*/
+
+        mHandler = handler;
+        appContext = context;
 
         start_server();
     }
 
-
-    private class timerTask extends TimerTask{
-    //TODO: Ble searching devices to another activity
-        @Override
-        public void run() {
-            mBluetoothAdapter.cancelDiscovery();
-            mBluetoothAdapter.startDiscovery();
-        }
+    public int getState(){
+        return mState;
     }
 
-    private class annoyingBluetoothTask extends  TimerTask{
-
-        @Override
-        public void run() {
-            String message = "I Love You <3";
-            write(message.getBytes());
-        }
-    }
 
     /**
      * Start the service. Specifically start AcceptThread to begin a
@@ -118,11 +100,11 @@ public class MyBluetoothService {
             mConnectThread = null;
         }
 
-//        // Cancel any thread currently running a connection
-//        if (mConnectedThread != null) {
-//            mConnectedThread.cancel();
-//            mConnectedThread = null;
-//        }
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
 
         // Start the thread to listen on a BluetoothServerSocket
         if (mSecureAcceptThread == null) {
@@ -131,27 +113,24 @@ public class MyBluetoothService {
         }
     }
 
-    public synchronized void  start_client(){
-        Log.d(TAG, "client started");
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        List<BluetoothDevice> pairedDevicesList = new ArrayList<BluetoothDevice>();
-        pairedDevicesList.addAll(pairedDevices);
+    public synchronized void  start_client(BluetoothDevice device){
+        Log.d(TAG, "client started connection with device "+ device.getName());
 
-//        if (mState == STATE_CONNECTING) {
-//            if (mConnectThread != null) {
-//                mConnectThread.cancel();
-//                mConnectThread = null;
-//            }
-//        }
-//
-//        // Cancel any thread currently running a connection
-//        if (mConnectedThread != null) {
-//            mConnectedThread.cancel();
-//            mConnectedThread = null;
-//        }
+         if (mState == STATE_CONNECTING) {
+            if (mConnectThread != null) {
+                mConnectThread.cancel();
+                mConnectThread = null;
+            }
+        }
+
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
 
         // Start the thread to connect with the given device
-        mConnectThread = new ConnectThread(pairedDevicesList.get(0));
+        mConnectThread = new ConnectThread(device);
         mConnectThread.start();
     }
 
@@ -163,23 +142,17 @@ public class MyBluetoothService {
      */
     public synchronized void connected(BluetoothSocket socket, BluetoothDevice device) {
         Log.d(TAG, "Connected thread starts");
-//        // Cancel the thread that completed the connection
-//        if (mConnectThread != null) {
-//            mConnectThread.cancel();
-//            mConnectThread = null;
-//        }
-//
-//        // Cancel any thread currently running a connection
-//        if (mConnectedThread != null) {
-//            mConnectedThread.cancel();
-//            mConnectedThread = null;
-//        }
-//
-//        // Cancel the accept thread because we only want to connect to one device
-//        if (mSecureAcceptThread != null) {
-//            mSecureAcceptThread.cancel();
-//            mSecureAcceptThread = null;
-//        }
+        // Cancel the thread that completed the connection
+        if (mConnectThread != null) {
+            mConnectThread.cancel();
+            mConnectThread = null;
+        }
+
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
 
         // Start the thread to manage the connection and perform transmissions
         mConnectedThread = new ConnectedThread(socket);
@@ -231,40 +204,6 @@ public class MyBluetoothService {
     }
 
     /**
-     * Function to print paired devices
-     * @return String with names and MAC's separateread by ','
-     */
-    public void getPairedDevices(){
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-
-        String pairedInfo = "Paired devices: ";
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
-            for (BluetoothDevice device : pairedDevices) {
-                pairedInfo += device.getName();
-                pairedInfo += device.getAddress(); // MAC address
-                pairedInfo += ", ";
-            }
-        }
-    }
-
-    // Create a BroadcastReceiver for ACTION_FOUND.
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Discovery has found a device. Get the BluetoothDevice
-                // object and its info from the Intent.
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                if(!blueDevices.contains(device)){
-                    blueDevices.add(device);
-                }
-            }
-            //TODO: Ble searching devices to another activity
-        }
-    };
-
-    /**
      * This thread runs while listening for incoming connections. It behaves
      * like a server-side client. It runs until a connection is accepted
      * (or until cancelled).
@@ -314,7 +253,7 @@ public class MyBluetoothService {
                                 try {
                                     socket.close();
                                 } catch (IOException e) {
-
+                                    Log.e(TAG, "Close connection by server error ", e);
                                 }
                                 break;
                         }
@@ -371,10 +310,15 @@ public class MyBluetoothService {
                 // until it succeeds or throws an exception.
                 mmSocket.connect();
             } catch (IOException connectException) {
+                Message msg = new Message();
+                msg.obj = "Something goes wrong, Did you run Aksolotl app in second device?";
+                mHandler.sendMessage(msg);
+
                 Log.e(TAG, "Could not connect with socket", connectException);
                 // Unable to connect; close the socket and return.
                 try {
                     mmSocket.close();
+                    Log.d(TAG, "socket closed, party is over");
                 } catch (IOException closeException) {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
@@ -447,7 +391,13 @@ public class MyBluetoothService {
                     Log.d(TAG, "Successfully read from input stream");
                     String message = new String(mmBuffer, Charset.defaultCharset());
                     message = message.substring(0, numBytes);
+
+                    Message msg = new Message();
+                    msg.obj = message;
+                    mHandler.sendMessage(msg);
+
                     Log.d(TAG, " - message: " + message);
+
                 } catch (IOException e) {
                     Log.e(TAG, "Error occurent while read inputStream", e);
                     break;
@@ -476,18 +426,26 @@ public class MyBluetoothService {
     }
 
     public void onDestroy(){
-
-        timer.cancel();
-        timer.purge();
-        mBluetoothAdapter.cancelDiscovery();
-
         stop();
-        // Don't forget to unregister the ACTION_FOUND receiver.
-        //TODO: Ble searching devices to another activity
-        //unregisterReceiver(mReceiver);
+
+        // Cancel any thread currently running connection try
+        if (mConnectThread != null) {
+            mConnectThread.cancel();
+            mConnectThread = null;
+        }
+
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
+
+        // Cancel the accept thread because we only want to connect to one device
+        if (mSecureAcceptThread != null) {
+            mSecureAcceptThread.cancel();
+            mSecureAcceptThread = null;
+        }
+
     }
-
-
-
 }
 
