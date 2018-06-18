@@ -8,22 +8,42 @@
     tools:context=".FolderActivity"
     tools:showIn="@layout/activity_folder">
 
-    <Button
-        android:id="@+id/searchDevicesButton"
+    <ImageView
+        android:id="@+id/aloxotlImage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="searchPiredDevices"
-        android:text="@string/app_devicelistBtn"
-        tools:layout_editor_absoluteX="29dp"
-        tools:layout_editor_absoluteY="23dp" />
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="260dp"
-        android:text="@string/app_btnLeft"
+        android:padding="6dp"
+        android:src="@drawable/aloxotl"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
+
+
+    <Button
+        android:id="@+id/searchDevicesButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="105dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="16dp"
+        android:onClick="searchPairedDevices"
+        android:text="@string/app_chooseFileBtn"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/aloxotlImage" />
+
+    <TextView
+        android:id="@+id/chosenFileTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="19dp"
+        android:layout_marginTop="24dp"
+        android:text=""
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/searchDevicesButton" />
+
 </android.support.constraint.ConstraintLayout>
