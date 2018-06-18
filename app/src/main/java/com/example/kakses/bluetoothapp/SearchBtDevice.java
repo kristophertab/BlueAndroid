@@ -75,6 +75,7 @@ public class SearchBtDevice extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(getApplicationContext(), ConnectedActivity.class);
+                intent.putExtras(getIntent().getExtras()); //pass the file path
                 String message = pairedDevicesListAddress.get(position);
                 intent.putExtra(EXTRA_MESSAGE, message);
                 startActivity(intent);

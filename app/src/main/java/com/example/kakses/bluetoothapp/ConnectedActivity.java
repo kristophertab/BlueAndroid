@@ -40,7 +40,6 @@ public class ConnectedActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         //Activity UI part
         setContentView(R.layout.connected_activity);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
